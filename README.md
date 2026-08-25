@@ -24,6 +24,7 @@ plugins/
     main.lua
 patches/
   1-lxgw-fonts.lua         可选的早期字体补丁
+  2-pdf-scroll-guard.lua   PDF 滚动泄漏守卫(必需)
 examples/
   defaults.custom.lua      EPUB 连续滚动默认值
   settings/hotkeys.lua     最小键盘配置示例
@@ -116,6 +117,7 @@ KOReader 写入配置时使用的 `alt_plus_j` 等字段名是其内部存储格
 
 ```bash
 cp -a patches/1-lxgw-fonts.lua ~/.config/koreader/patches/
+cp -a patches/2-pdf-scroll-guard.lua ~/.config/koreader/patches/
 ```
 
 如果字体目录或文件名不同，修改补丁顶部的 `font_dir` 与四个文件名。常规字体不存在时补丁会直接退出，不改变 KOReader。已有书籍可能在 `.sdr/metadata.*.lua` 中保存了单书 `font_face`，这种覆盖优先于全局默认，需要在该书字体菜单中切换一次。
@@ -128,7 +130,7 @@ KOReader 官方用户补丁约定要求文件名以数字和连字符开头；`1
 
 ```bash
 rm -rf ~/.config/koreader/plugins/vimkeys.koplugin
-rm -f ~/.config/koreader/patches/1-lxgw-fonts.lua
+rm -f ~/.config/koreader/patches/1-lxgw-fonts.lua ~/.config/koreader/patches/2-pdf-scroll-guard.lua
 ```
 
 手工恢复或删除本项目添加到 `hotkeys.lua` 和 `defaults.custom.lua` 的条目。项目不会自动删除用户阅读历史、书签或 `.sdr` 数据。
