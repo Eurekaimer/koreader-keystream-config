@@ -6,7 +6,7 @@
 
 ## 功能
 
-- 阅读器：`j` / `k` 小幅滚动，`Ctrl+J` / `Ctrl+K` 滚动屏幕高度的 30%；PDF 或翻页模式中改为下一页 / 上一页。
+- 阅读器：`j` / `k` 小幅滚动，`Space` / `Ctrl+J` 向下滚动屏幕高度的 35%，`Ctrl+K` 向上滚动 35%；PDF 或翻页模式中改为下一页 / 上一页。
 - 阅读器：`h` 打开阅读历史，`f` 返回文件管理器，`m` 打开上方主菜单，`p` 显示/隐藏富信息状态栏，`r` 编辑当前文档的 KOReader 自定义书名，`t` 打开目录，`b` 打开书签，`q` 退出。
 - 历史记录：保留每本书的字母快捷键；`Ctrl+J` / `Ctrl+K` 翻页；保留 `f` / `Ctrl+F` 返回文件管理器。
 - 文件管理器：`h` 打开历史记录，同时保留其他文件条目的字母快捷键。
@@ -40,6 +40,7 @@ docs/
 cp -a ~/.config/koreader ~/.config/koreader.backup
 mkdir -p ~/.config/koreader/plugins ~/.config/koreader/patches
 cp -a plugins/vimkeys.koplugin ~/.config/koreader/plugins/
+cp -a patches/2-pdf-scroll-guard.lua ~/.config/koreader/patches/
 ```
 
 如果尚无 `defaults.custom.lua`，可直接复制示例；如果文件已存在，只合并 `DCREREADER_VIEW_MODE = "scroll"`，不要覆盖其他默认值：
@@ -48,12 +49,15 @@ cp -a plugins/vimkeys.koplugin ~/.config/koreader/plugins/
 cp -a examples/defaults.custom.lua ~/.config/koreader/defaults.custom.lua
 ```
 
+`DCREREADER_VIEW_MODE = "scroll"` 会触发 [KOReader #15910](https://github.com/koreader/koreader/issues/15910)：无 `.sdr` 的 PDF 首次打开时可能进入 CRE 滚动分支并崩溃。因此使用该默认值时必须同时安装 `2-pdf-scroll-guard.lua`。补丁按维护者建议用 `self.ui.rolling` 区分 CRE 与 PDF/DjVu，并让分页文档回退到页码进度。
+
 `hotkeys.lua` 很可能已经包含设备、游戏手柄或个人绑定，**不要直接覆盖**。推荐在 KOReader 的“键盘快捷键”界面中按下表绑定；也可以手工合并 `examples/settings/hotkeys.lua`：
 
 | 上下文 | 按键 | KOReader 动作 |
 |---|---|---|
 | 阅读器 | `j` / `k` | `key_down` / `key_up` |
 | 阅读器 | `Ctrl+J` / `Ctrl+K` | `scroll_step_down` / `scroll_step_up` |
+| 阅读器 | `Space` | `scroll_step_down` |
 | 阅读器 | `h` | `history` |
 | 阅读器 | `f` | `filemanager` |
 | 阅读器 | `m` | `show_menu` |
@@ -117,7 +121,6 @@ KOReader 写入配置时使用的 `alt_plus_j` 等字段名是其内部存储格
 
 ```bash
 cp -a patches/1-lxgw-fonts.lua ~/.config/koreader/patches/
-cp -a patches/2-pdf-scroll-guard.lua ~/.config/koreader/patches/
 ```
 
 如果字体目录或文件名不同，修改补丁顶部的 `font_dir` 与四个文件名。常规字体不存在时补丁会直接退出，不改变 KOReader。已有书籍可能在 `.sdr/metadata.*.lua` 中保存了单书 `font_face`，这种覆盖优先于全局默认，需要在该书字体菜单中切换一次。

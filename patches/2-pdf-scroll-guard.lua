@@ -24,22 +24,23 @@ if not ReaderFooter then
     return
 end
 
-local original_update = ReaderFooter.updateFooterChapterProgress
+local original_set_toc_markers = ReaderFooter.setTocMarkers
 
-function ReaderFooter.updateFooterChapterProgress(self, force)
-    -- paging-engine documents (PDF) have no CRE-only method; force the
-    -- page branch when the leaked default set view_mode to scroll.
-    if self and self.ui and self.ui.document
-        and not self.ui.document.getPosFromXPointer
-        and self.view and self.view.view_mode ~= "page" then
-        local saved = self.view.view_mode
+function ReaderFooter:setTocMarkers(reset)
+    -- Frenzie's suggested issue #15910 guard: only rolling/CRE documents
+    -- can convert TOC XPointer entries into scroll positions. Paging
+    -- documents fall back to ReaderFooter's page-number branch.
+    if self.view.view_mode == "scroll" and not self.ui.rolling then
+        local saved_view_mode = self.view.view_mode
         self.view.view_mode = "page"
-        local ok, err = pcall(original_update, self, force)
-        self.view.view_mode = saved
+        local ok, result = pcall(original_set_toc_markers, self, reset)
+        self.view.view_mode = saved_view_mode
         if not ok then
-            error(err, 2)
+            error(result, 2)
         end
-        return
+        return result
     end
-    return original_update(self, force)
+    return original_set_toc_markers(self, reset)
 end
+
+require("logger").info("PDF scroll guard patch applied")
