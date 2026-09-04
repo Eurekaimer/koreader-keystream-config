@@ -14,6 +14,7 @@
 - 上方主菜单：`j` / `k` 移动焦点，`h` 返回上一级或关闭菜单，`l` / `Enter` 进入当前项目；方向键、Tab、Enter 仍保持原生行为。
 - EPUB 默认使用连续滚动模式。
 - 可选 LXGW WenKai 字体补丁：统一 KOReader 界面、正文默认字体、回退字体、页眉、页脚和等宽字体。
+- 可选离线英汉词典：把固定版本的 ECDICT 转换为 KOReader 可直接读取的 StarDict，包含 3,402,564 个词条及动词时态、复数、比较级等词形。
 
 ## 项目结构
 
@@ -28,6 +29,11 @@ patches/
 examples/
   defaults.custom.lua      EPUB 连续滚动默认值
   settings/hotkeys.lua     最小键盘配置示例
+licenses/
+  ECDICT-LICENSE          ECDICT 第三方许可证
+scripts/
+  install-ecdict.sh       下载、校验、转换并安装 ECDICT
+  ecdict_to_stardict.py   流式 StarDict 转换器
 docs/
   architecture.md          实现、兼容性和已修复问题
 ```
@@ -50,6 +56,27 @@ cp -a examples/defaults.custom.lua ~/.config/koreader/defaults.custom.lua
 ```
 
 `DCREREADER_VIEW_MODE = "scroll"` 会触发 [KOReader #15910](https://github.com/koreader/koreader/issues/15910)：无 `.sdr` 的 PDF 首次打开时可能进入 CRE 滚动分支并崩溃。因此使用该默认值时必须同时安装 `2-pdf-scroll-guard.lua`。补丁按维护者建议用 `self.ui.rolling` 区分 CRE 与 PDF/DjVu，并让分页文档回退到页码进度。
+
+### 离线英汉词典
+
+需要 `curl`、`7z`、`python3` 和约 300 MiB 可用空间。安装器下载固定在
+ECDICT `c1643ac` 的 50 MiB 压缩包，校验 SHA-256 后流式生成 3,402,564
+个 StarDict 词条；不把大型词典文件提交进仓库，也不删除其他词典：
+
+```bash
+./scripts/install-ecdict.sh
+./scripts/install-ecdict.sh --dry-run
+# 已有固定版本压缩包时可离线安装
+./scripts/install-ecdict.sh --archive /path/to/stardict.7z
+```
+
+输出目录为 `~/.config/koreader/data/dict/ecdict-en-zh/`；设置
+`STARDICT_DATA_DIR` 可改写词典根目录。重复执行会复用已验证的安装，
+需要重建时加 `--force`。安装后重启 KOReader，并保持“使用外部词典”
+关闭；本地 StarDict 不属于 KOReader 所称的外部词典应用。
+
+安装器会用 `sdcv`（存在时）精确查询 `computational`，确认结果包含
+“计算的”后才替换旧的同名 ECDICT 目录。
 
 `hotkeys.lua` 很可能已经包含设备、游戏手柄或个人绑定，**不要直接覆盖**。推荐在 KOReader 的“键盘快捷键”界面中按下表绑定；也可以手工合并 `examples/settings/hotkeys.lua`：
 
@@ -134,6 +161,7 @@ KOReader 官方用户补丁约定要求文件名以数字和连字符开头；`1
 ```bash
 rm -rf ~/.config/koreader/plugins/vimkeys.koplugin
 rm -f ~/.config/koreader/patches/1-lxgw-fonts.lua ~/.config/koreader/patches/2-pdf-scroll-guard.lua
+rm -rf ~/.config/koreader/data/dict/ecdict-en-zh
 ```
 
 手工恢复或删除本项目添加到 `hotkeys.lua` 和 `defaults.custom.lua` 的条目。项目不会自动删除用户阅读历史、书签或 `.sdr` 数据。
@@ -144,6 +172,7 @@ rm -f ~/.config/koreader/patches/1-lxgw-fonts.lua ~/.config/koreader/patches/2-p
 - 插件依赖 KOReader 的 `BookList`、`Menu`、`ReaderToc` 和 `FileManagerHistory` 内部接口。
 - `h` / `f` 在历史记录和文件管理器中原本可能被分配给第 8 / 14 个条目；插件会有意保留这两个字母用于导航。
 - 字体补丁是可选 Linux 配置，不属于 Vim 键位功能，也不会下载字体。
+- 完整 ECDICT 词典约占 270 MiB；首次安装需要下载并转换，之后查询完全离线。
 
 技术细节和已修复问题见 [docs/architecture.md](docs/architecture.md)。
 
